@@ -1,16 +1,28 @@
 package viewModel.main
 
+import data.main.PdfFileStatus
+import data.main.PdfListFile
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import operations.FileChooser
+import operations.excel.ExcelHandler
+import org.apache.poi.ss.usermodel.Cell
+import org.apache.poi.ss.usermodel.CellType
+import org.apache.poi.ss.usermodel.WorkbookFactory
 import ui.main.MainContract
-import useCase.AnalyzePdfUseCase
+import ui.sidePanel.SidePanelItem
+import useCase.AnalyzePdfVehicleIdUseCase
+import useCase.RenamePdfUseCase
 import viewModel.core.CoreViewModel
+import java.awt.Desktop
 import java.io.File
 
 class MainViewModel(
     private val coroutineScope: CoroutineScope,
-    private val pdfVehicleIdUseCase: AnalyzePdfUseCase
+    private val pdfVehicleIdUseCase: AnalyzePdfVehicleIdUseCase,
+    private val renamePdfUseCase: RenamePdfUseCase,
 ) : CoreViewModel<MainContract.Event, MainContract.State>(
     MainContract.State(),
     coroutineScope = coroutineScope
@@ -20,20 +32,34 @@ class MainViewModel(
     override suspend fun handleEvent(event: MainContract.Event) {
 
         when (event) {
-            is MainContract.Event.AnalyzePDF -> {
-                analyzePdf(event.selectedfiles)
+            is MainContract.Event.AnalyzePDFVehicleId -> {
+                analyzePdfVehicleId(event.selectedfiles)
             }
             is MainContract.Event.SelectFiles -> {
                 selectFiles()
             }
-            is MainContract.Event.TestEventState -> {
-                setState {
-                    copy(
-                        testInt = testInt + 1
-                    )
-                }
+            is MainContract.Event.OpenFileExplorer -> {
+                openFileExplorer(event.file.file)
+            }
+            is MainContract.Event.SelectExcelFile -> {
+                selectExcelFile()
+            }
+            is MainContract.Event.SideMenuItemSelected -> {
+                sideMenuSelected(event.menuItem)
             }
         }
+    }
+
+    private fun sideMenuSelected(menuSelected: SidePanelItem) {
+        setState {
+            copy(
+                sidePanelItem = menuSelected
+            )
+        }
+    }
+
+    private fun openFileExplorer(file: File) {
+        Desktop.getDesktop().open(file.parentFile)
     }
 
     private fun selectFiles() {
@@ -41,31 +67,92 @@ class MainViewModel(
         val selectedFiles = fileChooser.selectMutliplePDF()
         setState {
             copy(
-                selectedfiles = selectedFiles
+                filesList = selectedFiles.map {
+                    PdfListFile(
+                        file = it,
+                        status = PdfFileStatus.SELECTED
+                    )
+                } as MutableList<PdfListFile>
             )
         }
     }
 
-    private fun analyzePdf(selectedFiles: List<File>) {
+    private fun selectExcelFile() {
+        val fileChooser = FileChooser()
+        val selectedExcelFile = fileChooser.selectExcelFile() ?: return
+
+        validateExcelFile(selectedExcelFile)
+    }
+
+    private fun validateExcelFile(excelFile: File) {
+        val workbook = WorkbookFactory.create(excelFile) ?: return
+        setState {
+            copy(
+                excelSelectedFile = excelFile
+            )
+        }
+    }
+
+    private fun analyzePdfVehicleId(selectedFiles: List<PdfListFile>) {
         if (selectedFiles.isEmpty())
             return
 
 
+        val excelHandler = currentState.excelSelectedFile?.let { ExcelHandler.initExcelHandler(it) } ?: return
+
+        val errorFilesList: ArrayList<PdfListFile> = arrayListOf()
+        val successFilesList: ArrayList<PdfListFile> = arrayListOf()
+
         coroutineScope.launch {
-            selectedFiles.forEach {
-                val vehicleId = pdfVehicleIdUseCase.invoke(it)
-                println("Analyze file: ${it.name} . Found id: ${vehicleId}")
-                vehicleId?.let { vehicleId ->
-                    val newFile = File(it.parent, "$vehicleId.pdf")
-                    val successRename = it.renameTo(newFile)
-                    println("Rename file from ${it.name} to $successRename")
+            selectedFiles.forEach { selectedFile ->
+                setStateToFile(selectedFile, PdfFileStatus.LOADING)
+
+                val vehicleId = pdfVehicleIdUseCase.invoke(selectedFile.file)
+                if (vehicleId != null) {
+                    renamePdfUseCase.invoke(selectedFile.file, vehicleId)
+                    excelHandler.writeTelhKykloforiasToExcel(vehicleId)
+
+                    setStateToFile(selectedFile, PdfFileStatus.SUCCESS)
+                    successFilesList.add(selectedFile)
+                } else {
+                    errorFilesList.add(selectedFile)
+                    setStateToFile(selectedFile, PdfFileStatus.FAILED)
                 }
             }
-            setState {
-                copy(
-                    mainState = MainContract.MainScreenState.Success(true)
-                )
-            }
+
+//
+////            if (errorFilesList.isEmpty()) {
+////                setState {
+////                    copy(
+////                        mainState = MainContract.MainScreenState.Success(true)
+////                    )
+////                }
+////            } else {
+////                setState {
+////                    copy(
+////                        mainState = MainContract.MainScreenState.Error(error = Throwable("Failed to identify vehicle Id in some files")),
+////                        failedFiles = errorFilesList
+////                    )
+////                }
+////            }
+//
         }
     }
+
+    private fun setStateToFile(file: PdfListFile, newState: PdfFileStatus) {
+        setState {
+            val progressList = filesList.map {
+                if (it == file) {
+                    it.copy(status = newState)
+                } else {
+                    it
+                }
+            }
+            copy(
+                testStateInt = currentState.testStateInt + 1,
+                filesList = progressList
+            )
+        }
+    }
+
 }

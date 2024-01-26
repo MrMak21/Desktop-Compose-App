@@ -29,6 +29,15 @@ dependencies {
 
     implementation("io.insert-koin:koin-core:3.5.2")
 
+    // https://mvnrepository.com/artifact/org.apache.poi/poi
+    implementation("org.apache.poi:poi:5.2.5")
+    implementation ("org.apache.poi:poi-ooxml:5.2.5")
+
+    // https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core
+    implementation("org.apache.logging.log4j:log4j-core:2.22.1")
+
+
+
 
 
 

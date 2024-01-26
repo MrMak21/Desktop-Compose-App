@@ -4,7 +4,8 @@ import contracts.PdfRepositoryContract
 import operations.FileChooser
 import org.koin.dsl.module
 import repository.PdfRepository
-import useCase.AnalyzePdfUseCase
+import useCase.AnalyzePdfVehicleIdUseCase
+import useCase.RenamePdfUseCase
 import viewModel.main.MainViewModel
 
 val appModule = module {
@@ -17,10 +18,14 @@ val appModule = module {
      }
 
     single {
-        AnalyzePdfUseCase(pdfRepository = get())
+        AnalyzePdfVehicleIdUseCase(pdfRepository = get())
     }
 
     single {
-        MainViewModel(get(), get())
+        RenamePdfUseCase(pdfRepository = get())
+    }
+
+    single {
+        MainViewModel(get(), get(), get())
     }
 }
