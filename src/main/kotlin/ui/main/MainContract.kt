@@ -11,6 +11,7 @@ interface MainContract {
     sealed class Event: UiEvent {
 
         data class AnalyzePDFVehicleId(val selectedfiles: List<PdfListFile>): Event()
+        data class AnalyzePDFKteo(val selectedfiles: List<PdfListFile>): Event()
         object SelectFiles: Event()
         object SelectExcelFile: Event()
         data class OpenFileExplorer(val file: PdfListFile): Event()

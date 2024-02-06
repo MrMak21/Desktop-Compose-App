@@ -13,6 +13,7 @@ import org.apache.poi.ss.usermodel.CellType
 import org.apache.poi.ss.usermodel.WorkbookFactory
 import ui.main.MainContract
 import ui.sidePanel.SidePanelItem
+import useCase.AnalyzePdfKteoUseCase
 import useCase.AnalyzePdfVehicleIdUseCase
 import useCase.RenamePdfUseCase
 import viewModel.core.CoreViewModel
@@ -22,6 +23,7 @@ import java.io.File
 class MainViewModel(
     private val coroutineScope: CoroutineScope,
     private val pdfVehicleIdUseCase: AnalyzePdfVehicleIdUseCase,
+    private val pdfKteoUseCase: AnalyzePdfKteoUseCase,
     private val renamePdfUseCase: RenamePdfUseCase,
 ) : CoreViewModel<MainContract.Event, MainContract.State>(
     MainContract.State(),
@@ -34,6 +36,9 @@ class MainViewModel(
         when (event) {
             is MainContract.Event.AnalyzePDFVehicleId -> {
                 analyzePdfVehicleId(event.selectedfiles)
+            }
+            is MainContract.Event.AnalyzePDFKteo -> {
+                analyzePdfKteo(event.selectedfiles)
             }
             is MainContract.Event.SelectFiles -> {
                 selectFiles()
@@ -136,6 +141,24 @@ class MainViewModel(
 ////                }
 ////            }
 //
+        }
+    }
+
+    private fun analyzePdfKteo(selectedFiles: List<PdfListFile>) {
+        if (selectedFiles.isEmpty())
+            return
+
+        val excelHandler = currentState.excelSelectedFile?.let { ExcelHandler.initExcelHandler(it) } ?: return
+
+        coroutineScope.launch {
+            selectedFiles.forEach { selectedFile ->
+                val kteoExtractedDate = pdfKteoUseCase.invoke(selectedFile.file)
+                if (kteoExtractedDate != null) {
+                    println("File: ${selectedFile.file.name} found Kteo date: $kteoExtractedDate")
+                } else {
+                    println("Kteo failed to locate date")
+                }
+            }
         }
     }
 

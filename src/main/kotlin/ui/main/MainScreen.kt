@@ -18,6 +18,7 @@ import data.main.PdfListFile
 import extensions.startCollecting
 import repository.PdfRepository
 import ui.main.FileRow
+import ui.main.KteoScreenContent
 import ui.main.MainContract
 import ui.main.SecondaryMainContent
 import ui.sidePanel.SidePanel
@@ -27,6 +28,7 @@ import viewModel.main.MainViewModel
 import ui.main.MainContract.Event.*
 import ui.sidePanel.SidePanelItem
 import ui.trafficFees.TrafficFeesScreen
+import useCase.AnalyzePdfKteoUseCase
 
 @Composable
 @Preview
@@ -37,7 +39,8 @@ fun MainScreen() {
         MainViewModel(
             coroutineScope = coroutineScope,
             pdfVehicleIdUseCase = AnalyzePdfVehicleIdUseCase(pdfRepository = PdfRepository()),
-            renamePdfUseCase = RenamePdfUseCase(pdfRepository = PdfRepository())
+            renamePdfUseCase = RenamePdfUseCase(pdfRepository = PdfRepository()),
+            pdfKteoUseCase = AnalyzePdfKteoUseCase(pdfRepository = PdfRepository())
         )
     }
 
@@ -64,76 +67,11 @@ fun MainScreenContent(
             when (state.sidePanelItem) {
                 SidePanelItem.TRAFFIC_FEES -> { TrafficFeesScreen(state, onEvent) }
                 SidePanelItem.INVOICE -> { SecondaryMainContent(state, onEvent) }
-                SidePanelItem.KTEO -> { TrafficFeesScreen(state, onEvent) }
-            }
-        }
-
-        // Main content in a nested Row
-//        Row(
-//            modifier = Modifier.fillMaxSize()
-//        ) {
-//            // Left side with a button
-//            Column(
-//                modifier = Modifier
-//                    .weight(1f)
-//                    .fillMaxHeight(),
-//                horizontalAlignment = Alignment.CenterHorizontally,
-//                verticalArrangement = Arrangement.Center
-//            ) {
-//                MainPickerContent(
-//                    state = state,
-//                    onEvent = onEvent
-//                )
-//            }
-//
-//            // Right side placeholder
-//            Box(
-//                modifier = Modifier
-//                    .weight(1f)
-//                    .fillMaxHeight()
-//                    .background(Color.Gray) // Just for visualization
-//            ) {
-//                SecondaryMainContent(
-//                    state = state,
-//                    onEvent = onEvent
-//                )
-//            }
-//        }
-    }
-}
-
-@Composable
-fun MainPickerContent(
-    state: MainContract.State,
-    onEvent: (MainContract.Event) -> Unit
-) {
-
-    Column(modifier = Modifier.fillMaxSize()) {
-
-        LazyColumn(modifier = Modifier.fillMaxWidth()) {
-            itemsIndexed(state.filesList) { index, item ->
-                FileRow(file = item) { clickedFile: PdfListFile ->
-                    onEvent(OpenFileExplorer(clickedFile))
-                }
-            }
-        }
-
-        Row {
-            Button(onClick = {
-                onEvent(MainContract.Event.SelectFiles)
-            }) {
-                Text("Select PDF")
-            }
-
-            Button(
-                enabled = state.filesList.isNotEmpty() && state.excelSelectedFile != null,
-                onClick = {
-                    onEvent(MainContract.Event.AnalyzePDFVehicleId(selectedfiles = state.filesList))
-                }) {
-                Text("Telh Kykloforias")
+                SidePanelItem.KTEO -> { KteoScreenContent(state, onEvent) }
             }
         }
     }
-
 }
+
+
 

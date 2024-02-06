@@ -26,6 +26,6 @@ val appModule = module {
     }
 
     single {
-        MainViewModel(get(), get(), get())
+        MainViewModel(get(), get(), get(), get())
     }
 }

@@ -1,19 +1,27 @@
 package repository
 
 import contracts.PdfRepositoryContract
+import net.sourceforge.tess4j.Tesseract
 import org.apache.pdfbox.Loader
+import org.apache.pdfbox.pdmodel.PDDocument
+import org.apache.pdfbox.rendering.ImageType
+import org.apache.pdfbox.rendering.PDFRenderer
 import org.apache.pdfbox.text.PDFTextStripper
 import java.io.File
+import java.nio.file.Path
+import java.nio.file.Paths
+import javax.imageio.ImageIO
+
 
 class PdfRepository: PdfRepositoryContract {
 
-    val PATTERN = "[A-Za-z]{3}\\d{4}"
-    val GREEK_PATTERN = "[\\u0370-\\u03FF\\u1F00-\\u1FFF]{3}\\d{4}"
+    val VEHICLE_ID_PATTERN = "[A-Za-z]{3}\\d{4}"
+    val VEHICLE_ID_GREEK_PATTERN = "[\\u0370-\\u03FF\\u1F00-\\u1FFF]{3}\\d{4}"
+    val KTEO_DATE_PATTERN = "^(?:(?:31(\\/|-|\\.)(?:0?[13578]|1[02]))\\1|(?:(?:29|30)(\\/|-|\\.)(?:0?[13-9]|1[0-2])\\2))(?:(?:1[6-9]|[2-9]\\d)?\\d{2})\$|^(?:29(\\/|-|\\.)0?2\\3(?:(?:(?:1[6-9]|[2-9]\\d)?(?:0[48]|[2468][048]|[13579][26])|(?:(?:16|[2468][048]|[3579][26])00))))\$|^(?:0?[1-9]|1\\d|2[0-8])(\\/|-|\\.)(?:(?:0?[1-9])|(?:1[0-2]))\\4(?:(?:1[6-9]|[2-9]\\d)?\\d{2})\$"
 
     val pdfStripper = PDFTextStripper()
 
     override fun getVehicleIdFromPdf(pdfFile: File): String? {
-        pdfStripper.addMoreFormatting
         val pdfDocument = Loader.loadPDF(pdfFile)
         pdfDocument?.let {
             val pdfText = pdfStripper.getText(it)
@@ -22,13 +30,51 @@ class PdfRepository: PdfRepositoryContract {
         return null
     }
 
+    override fun getDateFromKteoPdf(pdfFile: File): String? {
+        val pdfDocument = Loader.loadPDF(pdfFile)
+        pdfDocument?.let {
+            var pdfText = pdfStripper.getText(it)
+            if (pdfText.trim().isEmpty()) {
+                pdfText = extractTextFromImage(it)
+            }
+            return extractKteoDate(pdfText)
+        }
+        return null
+    }
+
+    private fun extractTextFromImage(pdDocument: PDDocument): String {
+
+        val pdfRenderer = PDFRenderer(pdDocument)
+        val out = java.lang.StringBuilder()
+
+        val _tesseract = Tesseract()
+        val dataDirectory: Path = Paths.get("src/main/resources/tessdata/")
+        _tesseract.setDatapath(dataDirectory.toString())
+        _tesseract.setLanguage("grc")
+//        _tesseract.setTessVariable("tessedit_char_whitelist", "0123456789abcdefghijklmnopqrstuvwxyz")
+
+        for (page in 0 until pdDocument.numberOfPages) {
+            val bim = pdfRenderer.renderImageWithDPI(page, 300f, ImageType.RGB)
+
+            // Create a temp image file
+            val temp = File.createTempFile("tempfile_$page", ".png")
+            ImageIO.write(bim, "png", temp)
+            val result = _tesseract.doOCR(temp)
+            out.append(result)
+
+            // Delete temp file
+            temp.delete()
+        }
+        return out.toString()
+    }
+
     override fun renameFile(pdfFile: File, newName: String): Boolean {
         val newFile = File(pdfFile.parent, "$newName.pdf")
         return pdfFile.renameTo(newFile)
     }
 
     private fun extractNumber(document: String): String? {
-        val greekRegex = GREEK_PATTERN.toRegex()
+        val greekRegex = VEHICLE_ID_GREEK_PATTERN.toRegex()
         val greekMatch = greekRegex.find(document)
         val greekResult = greekMatch?.value
 
@@ -40,7 +86,7 @@ class PdfRepository: PdfRepositoryContract {
     }
 
     private fun extractEnglishNumber(document: String): String? {
-        val englishRegex = PATTERN.toRegex()
+        val englishRegex = VEHICLE_ID_PATTERN.toRegex()
         val englishMatch = englishRegex.find(document)
         val englishResult = englishMatch?.value
 
@@ -77,5 +123,14 @@ class PdfRepository: PdfRepositoryContract {
         return input.map { char ->
             englishToGreek[char] ?: char
         }.joinToString("")
+    }
+
+    private fun extractKteoDate(document: String): String? {
+        println(document)
+        val dateRegex = KTEO_DATE_PATTERN.toRegex()
+        val dateMatch = dateRegex.find(document)
+        val dateResult = dateMatch?.value
+
+        return dateResult
     }
 }

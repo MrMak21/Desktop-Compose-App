@@ -36,6 +36,10 @@ dependencies {
     // https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core
     implementation("org.apache.logging.log4j:log4j-core:2.22.1")
 
+    // https://mvnrepository.com/artifact/net.sourceforge.tess4j/tess4j
+    implementation("net.sourceforge.tess4j:tess4j:5.8.0")
+
+
 
 
 
