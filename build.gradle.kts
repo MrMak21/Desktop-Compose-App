@@ -24,9 +24,6 @@ dependencies {
     // https://mvnrepository.com/artifact/org.jetbrains.kotlinx/kotlinx-coroutines-core
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.2")
 
-    // https://mvnrepository.com/artifact/androidx.lifecycle/lifecycle-viewmodel-ktx
-    runtimeOnly("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2")
-
     implementation("io.insert-koin:koin-core:3.5.2")
 
     // https://mvnrepository.com/artifact/org.apache.poi/poi
@@ -38,14 +35,6 @@ dependencies {
 
     // https://mvnrepository.com/artifact/net.sourceforge.tess4j/tess4j
     implementation("net.sourceforge.tess4j:tess4j:5.8.0")
-
-
-
-
-
-
-
-
 
 //    testImplementation ("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.2")
     implementation(kotlin("stdlib-jdk8"))
@@ -62,8 +51,13 @@ compose.desktop {
         mainClass = "MainKt"
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "ComposeDesktop"
+            packageName = "Kyklos SA."
             packageVersion = "1.0.0"
+            windows {
+                packageVersion = "1.0.0"
+                msiPackageVersion = "1.0.0"
+                exePackageVersion = "1.0.0"
+            }
         }
     }
 }
