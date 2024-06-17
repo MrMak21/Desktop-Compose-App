@@ -14,8 +14,11 @@ interface MainContract {
         data class AnalyzePDFKteo(val selectedfiles: List<PdfListFile>): Event()
         object SelectFiles: Event()
         object SelectExcelFile: Event()
+        object ClearSelectedExcelFile: Event()
+        object ClearSelectedPdfFiles: Event()
         data class OpenFileExplorer(val file: PdfListFile): Event()
         data class SideMenuItemSelected(val menuItem: SidePanelItem): Event()
+        object StartTestExecution: Event()
     }
 
     data class State(

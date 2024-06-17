@@ -42,6 +42,12 @@ fun KteoScreenContent(
         }) {
             Text("Analyze")
         }
+
+        Button(onClick = { onEvent(MainContract.Event.StartTestExecution) }) {
+            Text("Test")
+        }
+
+        println("TestIntState: ${state.testStateInt}")
     }
 
 }

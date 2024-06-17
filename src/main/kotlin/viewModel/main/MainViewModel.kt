@@ -49,8 +49,17 @@ class MainViewModel(
             is MainContract.Event.SelectExcelFile -> {
                 selectExcelFile()
             }
+            is MainContract.Event.ClearSelectedExcelFile -> {
+                clearSelectedExcelFile()
+            }
+            is MainContract.Event.ClearSelectedPdfFiles -> {
+                clearSelectedPdfFiles()
+            }
             is MainContract.Event.SideMenuItemSelected -> {
                 sideMenuSelected(event.menuItem)
+            }
+            is MainContract.Event.StartTestExecution -> {
+                startTestExecution()
             }
         }
     }
@@ -89,6 +98,14 @@ class MainViewModel(
         validateExcelFile(selectedExcelFile)
     }
 
+    private fun clearSelectedExcelFile() {
+        setState { copy(excelSelectedFile = null) }
+    }
+
+    private fun clearSelectedPdfFiles() {
+        setState { copy(filesList = emptyList()) }
+    }
+
     private fun validateExcelFile(excelFile: File) {
         val workbook = WorkbookFactory.create(excelFile) ?: return
         setState {
@@ -124,23 +141,6 @@ class MainViewModel(
                     setStateToFile(selectedFile, PdfFileStatus.FAILED)
                 }
             }
-
-//
-////            if (errorFilesList.isEmpty()) {
-////                setState {
-////                    copy(
-////                        mainState = MainContract.MainScreenState.Success(true)
-////                    )
-////                }
-////            } else {
-////                setState {
-////                    copy(
-////                        mainState = MainContract.MainScreenState.Error(error = Throwable("Failed to identify vehicle Id in some files")),
-////                        failedFiles = errorFilesList
-////                    )
-////                }
-////            }
-//
         }
     }
 
@@ -162,19 +162,27 @@ class MainViewModel(
         }
     }
 
-    private fun setStateToFile(file: PdfListFile, newState: PdfFileStatus) {
+    private fun setStateToFile(file: PdfListFile, newFileStatus: PdfFileStatus) {
+        currentState.filesList.find {it == file}?.changeStatus(newStatus = newFileStatus)
         setState {
-            val progressList = filesList.map {
-                if (it == file) {
-                    it.copy(status = newState)
-                } else {
-                    it
-                }
-            }
             copy(
                 testStateInt = currentState.testStateInt + 1,
-                filesList = progressList
+                filesList = currentState.filesList
             )
+        }
+    }
+
+    private fun startTestExecution() {
+        coroutineScope.launch {
+        for (i in 1..10) {
+            delay(500)
+            setState {
+                copy(
+                    testStateInt = currentState.testStateInt + 1
+                )
+            }
+        }
+
         }
     }
 

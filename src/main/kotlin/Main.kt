@@ -8,8 +8,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
+import androidx.compose.ui.window.rememberWindowState
 import org.apache.pdfbox.Loader
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.text.PDFTextStripper
@@ -25,7 +28,12 @@ fun App() {
 }
 
 fun main() = application {
-    Window(onCloseRequest = ::exitApplication) {
+    Window(
+        state = rememberWindowState(width = 1000.dp, height = 700.dp), // Set fixed size here
+        resizable = false,
+        title = "Kyklos Corporate Inc.",
+        icon = painterResource("assets/ic_kyklos_logo.png"),
+        onCloseRequest = ::exitApplication) {
         App()
     }
 }

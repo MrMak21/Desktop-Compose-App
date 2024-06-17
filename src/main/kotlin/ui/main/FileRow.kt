@@ -31,7 +31,7 @@ fun FileRow(
             .clickable { onClick(file) }
             .pointerHoverIcon(PointerIcon(Cursor(Cursor.HAND_CURSOR)))
     ) {
-        Image(painter = painterResource("assets/ic_pdf.png"), contentDescription = "", modifier = Modifier.size(18.dp))
+        Image(painter = painterResource("assets/ic_pdf_red.png"), contentDescription = "", modifier = Modifier.size(18.dp))
         Text(
             modifier = Modifier.padding(vertical = 6.dp, horizontal = 12.dp),
             text = file.file.name,
