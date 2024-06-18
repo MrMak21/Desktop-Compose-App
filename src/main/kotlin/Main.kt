@@ -32,7 +32,7 @@ fun main() = application {
         state = rememberWindowState(width = 1000.dp, height = 700.dp), // Set fixed size here
         resizable = false,
         title = "Kyklos Corporate Inc.",
-        icon = painterResource("assets/ic_kyklos_logo.png"),
+        icon = painterResource("assets/ic_logo.png"),
         onCloseRequest = ::exitApplication) {
         App()
     }
