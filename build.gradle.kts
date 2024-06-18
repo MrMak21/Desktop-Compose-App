@@ -51,9 +51,11 @@ compose.desktop {
         mainClass = "MainKt"
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "Kyklos SA."
+            includeAllModules = true
+            packageName = "Kyklos SA"
             packageVersion = "1.0.0"
             windows {
+                iconFile.set(project.file("src/main/resources/assets/ic_logo.ico"))
                 packageVersion = "1.0.0"
                 msiPackageVersion = "1.0.0"
                 exePackageVersion = "1.0.0"
