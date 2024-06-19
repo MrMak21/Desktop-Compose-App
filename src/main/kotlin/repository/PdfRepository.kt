@@ -1,6 +1,8 @@
 package repository
 
 import contracts.PdfRepositoryContract
+import extensions.translateToGreek
+import helpers.Constants
 import net.sourceforge.tess4j.Tesseract
 import org.apache.pdfbox.Loader
 import org.apache.pdfbox.pdmodel.PDDocument
@@ -15,8 +17,6 @@ import javax.imageio.ImageIO
 
 class PdfRepository: PdfRepositoryContract {
 
-    val VEHICLE_ID_PATTERN = "[A-Za-z]{3}\\d{4}"
-    val VEHICLE_ID_GREEK_PATTERN = "[\\u0370-\\u03FF\\u1F00-\\u1FFF]{3}\\d{4}"
     val KTEO_DATE_PATTERN = "^(?:(?:31(\\/|-|\\.)(?:0?[13578]|1[02]))\\1|(?:(?:29|30)(\\/|-|\\.)(?:0?[13-9]|1[0-2])\\2))(?:(?:1[6-9]|[2-9]\\d)?\\d{2})\$|^(?:29(\\/|-|\\.)0?2\\3(?:(?:(?:1[6-9]|[2-9]\\d)?(?:0[48]|[2468][048]|[13579][26])|(?:(?:16|[2468][048]|[3579][26])00))))\$|^(?:0?[1-9]|1\\d|2[0-8])(\\/|-|\\.)(?:(?:0?[1-9])|(?:1[0-2]))\\4(?:(?:1[6-9]|[2-9]\\d)?\\d{2})\$"
 
     val pdfStripper = PDFTextStripper()
@@ -74,7 +74,7 @@ class PdfRepository: PdfRepositoryContract {
     }
 
     private fun extractNumber(document: String): String? {
-        val greekRegex = VEHICLE_ID_GREEK_PATTERN.toRegex()
+        val greekRegex = Constants.Vehicle.GREEK_LICENSE_FULL_REGEX.toRegex()  // VEHICLE_ID_GREEK_PATTERN.toRegex()
         val greekMatch = greekRegex.find(document)
         val greekResult = greekMatch?.value
 
@@ -86,13 +86,13 @@ class PdfRepository: PdfRepositoryContract {
     }
 
     private fun extractEnglishNumber(document: String): String? {
-        val englishRegex = VEHICLE_ID_PATTERN.toRegex()
+        val englishRegex = Constants.Vehicle.LICENSE_FULL_REGEX.toRegex()  // VEHICLE_ID_PATTERN.toRegex()
         val englishMatch = englishRegex.find(document)
         val englishResult = englishMatch?.value
 
         if (englishResult != null) {
             println("Found english: $englishResult")
-            val convertedGreekString = translateToGreek(englishResult)
+            val convertedGreekString = englishResult.translateToGreek() // translateToGreek(englishResult)
             println("Translated in Greek: $convertedGreekString")
             return convertedGreekString
         }

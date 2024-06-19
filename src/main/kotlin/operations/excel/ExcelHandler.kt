@@ -1,5 +1,7 @@
 package operations.excel
 
+
+import extensions.*
 import org.apache.poi.ss.usermodel.*
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import java.io.File
@@ -16,12 +18,11 @@ class ExcelHandler(private val workbook: Workbook, private val excelFile: File) 
         }
     }
 
-    val ID_LETTERS = 1
-    val ID_NUMBERS = 2
-    val TELH_KYKLOFORIAS = -1
-
     private val TELH_KYKLOFORIAS_LABEL = "Β.ΤΚ"
     private var TELH_KYKLOFORIAS_COLUMN_INDEX = -1
+
+    private var VEHICLE_LICENSE_PLATE_COLUMN_INDEX = -1
+    private var VEHICLE_LICENSE_NUMBERS_COLUMN_INDEX = -1
 
     private var activeSheet: Sheet? = null
 
@@ -29,43 +30,60 @@ class ExcelHandler(private val workbook: Workbook, private val excelFile: File) 
         activeSheet = workbook.getSheetAt(0)
         activeSheet?.let { activesheet ->
             findTelhKykloforiasCell(activesheet)
+            findVehiclePlateColumnIndex(activesheet)
         }
     }
 
     private fun findTelhKykloforiasCell(sheet: Sheet) {
         val firstRow = sheet.getRow(0) ?: return
         for (cell in firstRow) {
-            cell?.let { cell ->
-                if (cell.cellType == CellType.STRING && cell.stringCellValue == TELH_KYKLOFORIAS_LABEL) {
-                    TELH_KYKLOFORIAS_COLUMN_INDEX = cell.columnIndex
+            cell?.let { currentCell ->
+                if (currentCell.cellType == CellType.STRING && currentCell.stringCellValue == TELH_KYKLOFORIAS_LABEL) {
+                    TELH_KYKLOFORIAS_COLUMN_INDEX = currentCell.columnIndex
+                }
+            }
+        }
+    }
+
+    private fun findVehiclePlateColumnIndex(sheet: Sheet) {
+        for (row in sheet) {
+            for (cell in row) {
+                cell?.let { currentCell ->
+                    if (currentCell.cellType == CellType.STRING && currentCell.stringCellValue.isVehiclePlateLetters()) {
+                        VEHICLE_LICENSE_PLATE_COLUMN_INDEX = currentCell.columnIndex
+                    }
+                    if (currentCell.cellType == CellType.NUMERIC && currentCell.numericCellValue.isVehiclePlateNumbers()) {
+                        VEHICLE_LICENSE_NUMBERS_COLUMN_INDEX = currentCell.columnIndex
+                    }
+                    if (VEHICLE_LICENSE_NUMBERS_COLUMN_INDEX != -1 && VEHICLE_LICENSE_PLATE_COLUMN_INDEX != -1) {
+                        return
+                    }
                 }
             }
         }
     }
 
     fun writeTelhKykloforiasToExcel(vehicleId: String) {
-        val vehicleIdLetters = vehicleId.substring(0,3)
-        val vehicleIdNumbers = vehicleId.substring(3,7)
+        val vehicleIdLettersGR = vehicleId.substring(0,3)
+        val vehicleIdNumbersGR = vehicleId.substring(3,7)
 
-        val foundVehicleIdLetters = findStringCellInExcel(vehicleIdLetters) ?: return
-        val foundVehicleIdNumbers = findNumberCellInExcel(vehicleIdNumbers) ?: return
+        val vehicleIdLettersRow = findVehicleIdLettersCell(vehicleIdLettersGR)?.row?.rowNum ?: return
+        val vehicleIdNumbersRow = findVehicleIdNumbersCell(vehicleIdNumbersGR)?.row?.rowNum ?: return
 
-        val foundRowLetters = foundVehicleIdLetters.row?.rowNum ?: return
-        val foundRowNumbers = foundVehicleIdNumbers.row?.rowNum ?: return
 
-        if (foundRowLetters != foundRowNumbers) {
-            val finalFoundRow = findRowContainBothValues(foundRowLetters, foundRowNumbers, vehicleIdLetters, vehicleIdNumbers)
+        if (vehicleIdLettersRow != vehicleIdNumbersRow) {
+            val finalFoundRow = findRowContainBothValues(vehicleIdLettersRow, vehicleIdNumbersRow, vehicleIdLettersGR, vehicleIdNumbersGR)
             writeInExcel(finalFoundRow, TELH_KYKLOFORIAS_COLUMN_INDEX)
         } else {
-            writeInExcel(foundRowLetters, TELH_KYKLOFORIAS_COLUMN_INDEX)
+            writeInExcel(vehicleIdLettersRow, TELH_KYKLOFORIAS_COLUMN_INDEX)
         }
 
     }
 
     private fun writeInExcel(row: Int, column: Int) {
         activeSheet?.let { activeSheet ->
-            val row = activeSheet.getRow(row) ?: return
-            val cell = row.getCell(column) ?: return
+            val currRow = activeSheet.getRow(row) ?: return
+            val cell = currRow.getCell(column) ?: return
             cell.setCellValue("OK!")
 
             saveAndCloseExcelFile()
@@ -108,52 +126,20 @@ class ExcelHandler(private val workbook: Workbook, private val excelFile: File) 
         return -1
     }
 
-    private fun findStringCellInExcel(value: String): Cell? {
-        activeSheet?.let { activeSheet ->
-            for (row in activeSheet) {
-                row?.let { row ->
-                    for (cell in row) {
-                        cell?.let { cell ->
-                            checkStringCell(cell, value) ?.let { foundCell ->
-                                return foundCell
-                            }
-                        }
-                    }
-                }
-            }
+    private fun findVehicleIdLettersCell(vehicleId: String): Cell? {
+        if (VEHICLE_LICENSE_PLATE_COLUMN_INDEX == -1) {
+            return null
         }
-        return null
+
+        return activeSheet?.findCell(VEHICLE_LICENSE_PLATE_COLUMN_INDEX, vehicleId)
     }
 
-    private fun findNumberCellInExcel(value: String): Cell? {
-        activeSheet?.let { activeSheet ->
-            for (row in activeSheet) {
-                row?.let { row ->
-                    for (cell in row) {
-                        cell?.let { cell ->
-                            checkNumberCell(cell, value) ?.let { foundCell ->
-                                return foundCell
-                            }
-                        }
-                    }
-                }
-            }
+    private fun findVehicleIdNumbersCell(vehicleIdNumbers: String): Cell? {
+        if (VEHICLE_LICENSE_NUMBERS_COLUMN_INDEX == -1) {
+            return null
         }
-        return null
-    }
 
-    private fun checkNumberCell(cell: Cell, value: String): Cell? {
-        if (cell.cellType == CellType.NUMERIC && cell.numericCellValue == value.toDouble()) {
-            return cell
-        }
-        return null
-    }
-
-    private fun checkStringCell(cell: Cell, value: String): Cell? {
-        if (cell.cellType == CellType.STRING && cell.stringCellValue == value) {
-            return cell
-        }
-        return null
+        return activeSheet?.findCell(VEHICLE_LICENSE_NUMBERS_COLUMN_INDEX, vehicleIdNumbers)
     }
 
 

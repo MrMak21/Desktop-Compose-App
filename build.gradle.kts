@@ -46,6 +46,10 @@ tasks.withType<KotlinCompile> {
     kotlinOptions.jvmTarget = "11"
 }
 
+tasks.withType<Test> {
+    useJUnitPlatform()
+}
+
 compose.desktop {
     application {
         mainClass = "MainKt"

@@ -113,7 +113,7 @@ class MainViewModel(
                 excelSelectedFile = excelFile
             )
         }
-    }
+        }
 
     private fun analyzePdfVehicleId(selectedFiles: List<PdfListFile>) {
         if (selectedFiles.isEmpty())
