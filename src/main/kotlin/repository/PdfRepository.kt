@@ -68,9 +68,12 @@ class PdfRepository: PdfRepositoryContract {
         return out.toString()
     }
 
-    override fun renameFile(pdfFile: File, newName: String): Boolean {
+    override fun renameFile(pdfFile: File, newName: String): File? {
         val newFile = File(pdfFile.parent, "$newName.pdf")
-        return pdfFile.renameTo(newFile)
+        if (pdfFile.renameTo(newFile)) {
+            return newFile
+        }
+        return null
     }
 
     private fun extractNumber(document: String): String? {

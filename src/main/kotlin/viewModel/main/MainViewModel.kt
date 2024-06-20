@@ -2,19 +2,20 @@ package viewModel.main
 
 import data.main.PdfFileStatus
 import data.main.PdfListFile
+import extensions.onError
+import extensions.onSuccess
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import operations.FileChooser
 import operations.excel.ExcelHandler
-import org.apache.poi.ss.usermodel.Cell
-import org.apache.poi.ss.usermodel.CellType
 import org.apache.poi.ss.usermodel.WorkbookFactory
 import ui.main.MainContract
 import ui.sidePanel.SidePanelItem
 import useCase.AnalyzePdfKteoUseCase
 import useCase.AnalyzePdfVehicleIdUseCase
+import ui.main.MainContract.*
+import ui.main.MainContract.Event.*
 import useCase.RenamePdfUseCase
 import viewModel.core.CoreViewModel
 import java.awt.Desktop
@@ -25,40 +26,43 @@ class MainViewModel(
     private val pdfVehicleIdUseCase: AnalyzePdfVehicleIdUseCase,
     private val pdfKteoUseCase: AnalyzePdfKteoUseCase,
     private val renamePdfUseCase: RenamePdfUseCase,
-) : CoreViewModel<MainContract.Event, MainContract.State>(
-    MainContract.State(),
+) : CoreViewModel<Event, State>(
+    initialState = State(),
     coroutineScope = coroutineScope
 ) {
 
 
-    override suspend fun handleEvent(event: MainContract.Event) {
+    override suspend fun handleEvent(event: Event) {
 
         when (event) {
-            is MainContract.Event.AnalyzePDFVehicleId -> {
-                analyzePdfVehicleId(event.selectedfiles)
+            is AnalyzePDFVehicleId -> {
+                startTelhKykloforiasAction(event.selectedfiles)
             }
-            is MainContract.Event.AnalyzePDFKteo -> {
+            is RenameTrafficFeesFiles -> {
+                renamePdfTrafficFeesFiles(event.selectedfiles)
+            }
+            is AnalyzePDFKteo -> {
                 analyzePdfKteo(event.selectedfiles)
             }
-            is MainContract.Event.SelectFiles -> {
+            is SelectFiles -> {
                 selectFiles()
             }
-            is MainContract.Event.OpenFileExplorer -> {
+            is OpenFileExplorer -> {
                 openFileExplorer(event.file.file)
             }
-            is MainContract.Event.SelectExcelFile -> {
+            is SelectExcelFile -> {
                 selectExcelFile()
             }
-            is MainContract.Event.ClearSelectedExcelFile -> {
+            is ClearSelectedExcelFile -> {
                 clearSelectedExcelFile()
             }
-            is MainContract.Event.ClearSelectedPdfFiles -> {
+            is ClearSelectedPdfFiles -> {
                 clearSelectedPdfFiles()
             }
-            is MainContract.Event.SideMenuItemSelected -> {
+            is SideMenuItemSelected -> {
                 sideMenuSelected(event.menuItem)
             }
-            is MainContract.Event.StartTestExecution -> {
+            is StartTestExecution -> {
                 startTestExecution()
             }
         }
@@ -115,32 +119,90 @@ class MainViewModel(
         }
         }
 
-    private fun analyzePdfVehicleId(selectedFiles: List<PdfListFile>) {
+    private fun startTelhKykloforiasAction(selectedFiles: List<PdfListFile>) {
         if (selectedFiles.isEmpty())
             return
 
-
         val excelHandler = currentState.excelSelectedFile?.let { ExcelHandler.initExcelHandler(it) } ?: return
 
-        val errorFilesList: ArrayList<PdfListFile> = arrayListOf()
-        val successFilesList: ArrayList<PdfListFile> = arrayListOf()
+        coroutineScope.launch {
+            selectedFiles.forEach { selectedFile ->
+
+                renameAndWriteToExcelTrafficFeesFile(selectedFile, excelHandler)
+
+
+//                setStateToFile(selectedFile, PdfFileStatus.LOADING)
+//
+//                val vehicleId = pdfVehicleIdUseCase.invoke(selectedFile.file)
+//                if (vehicleId != null) {
+//                    renamePdfUseCase.invoke(selectedFile.file, vehicleId)
+//                    excelHandler.writeTelhKykloforiasToExcel(vehicleId)
+//
+//                    setStateToFile(selectedFile, PdfFileStatus.SUCCESS)
+//                } else {
+//                    setStateToFile(selectedFile, PdfFileStatus.FAILED)
+//                }
+            }
+        }
+    }
+
+    private suspend fun renameAndWriteToExcelTrafficFeesFile(workingFile: PdfListFile, excelHandler: ExcelHandler) {
+        setStateToFile(workingFile, PdfFileStatus.LOADING)
+
+        val vehicleId = pdfVehicleIdUseCase.invoke(workingFile.file)
+
+        if (vehicleId == null) {
+            setStateToFile(workingFile, PdfFileStatus.FAILED)
+            return
+        }
+
+        val renamedFile = renamePdfUseCase.invoke(workingFile.file, vehicleId)
+            .onSuccess { renamedFile ->
+                onFileRenameSuccess(workingFile, renamedFile)
+            }
+            .onError {
+                setStateToFile(workingFile, PdfFileStatus.FAILED)
+                return@onError
+            } ?: return
+
+        val writtenToExcel = excelHandler.writeTelhKykloforiasToExcel(vehicleId)
+        setStateToFile(
+            file = workingFile,
+            newFileStatus = if (writtenToExcel) PdfFileStatus.SUCCESS else PdfFileStatus.FAILED
+        )
+
+    }
+
+    private fun renamePdfTrafficFeesFiles(selectedFiles: List<PdfListFile>) {
+        if (selectedFiles.isEmpty())
+            return
 
         coroutineScope.launch {
             selectedFiles.forEach { selectedFile ->
                 setStateToFile(selectedFile, PdfFileStatus.LOADING)
-
                 val vehicleId = pdfVehicleIdUseCase.invoke(selectedFile.file)
                 if (vehicleId != null) {
-                    renamePdfUseCase.invoke(selectedFile.file, vehicleId)
-                    excelHandler.writeTelhKykloforiasToExcel(vehicleId)
-
-                    setStateToFile(selectedFile, PdfFileStatus.SUCCESS)
-                    successFilesList.add(selectedFile)
+                    val renamedFile = renamePdfUseCase.invoke(selectedFile.file, vehicleId)
+                    if (renamedFile != null) {
+                        onFileRenameSuccess(selectedFile, renamedFile)
+                    } else {
+                        setStateToFile(selectedFile, PdfFileStatus.FAILED)
+                    }
                 } else {
-                    errorFilesList.add(selectedFile)
                     setStateToFile(selectedFile, PdfFileStatus.FAILED)
                 }
             }
+        }
+    }
+
+    private fun onFileRenameSuccess(oldFile: PdfListFile, newFile: File) {
+        currentState.filesList.find {it == oldFile}?.updateFileAndStatus(newFile = newFile, newStatus = PdfFileStatus.SUCCESS)
+
+        setState {
+            copy(
+                testStateInt = currentState.testStateInt + 1,
+                filesList = currentState.filesList
+            )
         }
     }
 

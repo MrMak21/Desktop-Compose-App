@@ -176,6 +176,26 @@ fun TrafficFeesScreen(
                 }
             }
 
+            OutlinedButton(
+                modifier = Modifier.pointerHoverIcon(PointerIcon(Cursor(Cursor.HAND_CURSOR))),
+                enabled = state.filesList.isNotEmpty(),
+                shape = RoundedCornerShape(6.dp),
+                colors = ButtonDefaults.buttonColors(
+                    backgroundColor = activeGreen,
+                    disabledBackgroundColor = activeGreen.copy(alpha = 0.4f)
+                ),
+                onClick = {
+                    onEvent(MainContract.Event.RenameTrafficFeesFiles(selectedfiles = state.filesList))
+                }) {
+                Text(
+                    text = "RENAME",
+                    fontSize = 16.sp,
+                    color = letterWhiteSnow,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
 
             OutlinedButton(
                 modifier = Modifier.pointerHoverIcon(PointerIcon(Cursor(Cursor.HAND_CURSOR))),

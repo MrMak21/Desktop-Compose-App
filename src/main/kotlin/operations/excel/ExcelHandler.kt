@@ -63,15 +63,15 @@ class ExcelHandler(private val workbook: Workbook, private val excelFile: File) 
         }
     }
 
-    fun writeTelhKykloforiasToExcel(vehicleId: String) {
+    fun writeTelhKykloforiasToExcel(vehicleId: String): Boolean {
         val vehicleIdLettersGR = vehicleId.substring(0,3)
         val vehicleIdNumbersGR = vehicleId.substring(3,7)
 
-        val vehicleIdLettersRow = findVehicleIdLettersCell(vehicleIdLettersGR)?.row?.rowNum ?: return
-        val vehicleIdNumbersRow = findVehicleIdNumbersCell(vehicleIdNumbersGR)?.row?.rowNum ?: return
+        val vehicleIdLettersRow = findVehicleIdLettersCell(vehicleIdLettersGR)?.row?.rowNum ?: return false
+        val vehicleIdNumbersRow = findVehicleIdNumbersCell(vehicleIdNumbersGR)?.row?.rowNum ?: return false
 
 
-        if (vehicleIdLettersRow != vehicleIdNumbersRow) {
+        return if (vehicleIdLettersRow != vehicleIdNumbersRow) {
             val finalFoundRow = findRowContainBothValues(vehicleIdLettersRow, vehicleIdNumbersRow, vehicleIdLettersGR, vehicleIdNumbersGR)
             writeInExcel(finalFoundRow, TELH_KYKLOFORIAS_COLUMN_INDEX)
         } else {
@@ -80,13 +80,19 @@ class ExcelHandler(private val workbook: Workbook, private val excelFile: File) 
 
     }
 
-    private fun writeInExcel(row: Int, column: Int) {
-        activeSheet?.let { activeSheet ->
-            val currRow = activeSheet.getRow(row) ?: return
-            val cell = currRow.getCell(column) ?: return
-            cell.setCellValue("OK!")
+    private fun writeInExcel(row: Int, column: Int): Boolean {
+        return try {
+            activeSheet?.let { activeSheet ->
+                val currRow = activeSheet.getRow(row) ?: return false
+                val cell = currRow.getCell(column) ?: return false
+                cell.setCellValue("OK!")
 
-            saveAndCloseExcelFile()
+                saveAndCloseExcelFile()
+
+                true
+            } ?: false
+        } catch (t: Throwable) {
+            false
         }
     }
 

@@ -6,5 +6,5 @@ interface PdfRepositoryContract {
 
     fun getVehicleIdFromPdf(pdfFile: File): String?
     fun getDateFromKteoPdf(pdfFile: File): String?
-    fun renameFile(pdfFile: File, newName: String): Boolean
+    fun renameFile(pdfFile: File, newName: String): File?
 }
