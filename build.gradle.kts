@@ -70,6 +70,13 @@ compose.desktop {
                 shortcut = true
             }
         }
+
+        buildTypes.release.proguard {
+            configurationFiles.from(project.file("src/main/resources/proGuard/pro_guard_conf.pro"))
+            isEnabled.set(false)
+            obfuscate.set(false)
+            optimize.set(false)
+        }
     }
 }
 val compileKotlin: KotlinCompile by tasks
