@@ -108,11 +108,11 @@ class ExcelHandler(private val workbook: Workbook, private val excelFile: File) 
             val lettersExcelRow = activeSheet.getRow(lettersRow)
             val numbersExcelRow = activeSheet.getRow(numbersRow)
 
-            val lettersRow_lettersValueFound = lettersExcelRow?.find { it.cellType == CellType.STRING && it.stringCellValue == lettersValue }
-            val lettersRow_numbersFoundValue = lettersExcelRow?.find { it.cellType == CellType.NUMERIC && it.numericCellValue == numbersValue.toDouble() }
+            val lettersRow_lettersValueFound = lettersExcelRow?.find { it.hasStringValue(lettersValue) }
+            val lettersRow_numbersFoundValue = lettersExcelRow?.find { it.hasNumericValue(numbersValue) }
 
-            val numbersRow_lettersValueFound = numbersExcelRow?.find { it.cellType == CellType.STRING && it.stringCellValue == lettersValue }
-            val numbersRow_numbersFoundValue = numbersExcelRow?.find { it.cellType == CellType.NUMERIC && it.numericCellValue == numbersValue.toDouble() }
+            val numbersRow_lettersValueFound = numbersExcelRow?.find { it.hasStringValue(lettersValue) }
+            val numbersRow_numbersFoundValue = numbersExcelRow?.find { it.hasNumericValue(numbersValue) }
 
             if (lettersRow_lettersValueFound != null && lettersRow_numbersFoundValue != null) {
                 lettersRow_lettersValueFound.row?.let {

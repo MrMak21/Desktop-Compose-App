@@ -20,6 +20,7 @@ import useCase.RenamePdfUseCase
 import viewModel.core.CoreViewModel
 import java.awt.Desktop
 import java.io.File
+import kotlin.time.Duration
 
 class MainViewModel(
     private val coroutineScope: CoroutineScope,
@@ -117,7 +118,7 @@ class MainViewModel(
                 excelSelectedFile = excelFile
             )
         }
-        }
+    }
 
     private fun startTelhKykloforiasAction(selectedFiles: List<PdfListFile>) {
         if (selectedFiles.isEmpty())
@@ -127,27 +128,14 @@ class MainViewModel(
 
         coroutineScope.launch {
             selectedFiles.forEach { selectedFile ->
-
                 renameAndWriteToExcelTrafficFeesFile(selectedFile, excelHandler)
-
-
-//                setStateToFile(selectedFile, PdfFileStatus.LOADING)
-//
-//                val vehicleId = pdfVehicleIdUseCase.invoke(selectedFile.file)
-//                if (vehicleId != null) {
-//                    renamePdfUseCase.invoke(selectedFile.file, vehicleId)
-//                    excelHandler.writeTelhKykloforiasToExcel(vehicleId)
-//
-//                    setStateToFile(selectedFile, PdfFileStatus.SUCCESS)
-//                } else {
-//                    setStateToFile(selectedFile, PdfFileStatus.FAILED)
-//                }
             }
         }
     }
 
     private suspend fun renameAndWriteToExcelTrafficFeesFile(workingFile: PdfListFile, excelHandler: ExcelHandler) {
         setStateToFile(workingFile, PdfFileStatus.LOADING)
+        delay(1)
 
         val vehicleId = pdfVehicleIdUseCase.invoke(workingFile.file)
 
@@ -180,6 +168,7 @@ class MainViewModel(
         coroutineScope.launch {
             selectedFiles.forEach { selectedFile ->
                 setStateToFile(selectedFile, PdfFileStatus.LOADING)
+                delay(1)
                 val vehicleId = pdfVehicleIdUseCase.invoke(selectedFile.file)
                 if (vehicleId != null) {
                     val renamedFile = renamePdfUseCase.invoke(selectedFile.file, vehicleId)
