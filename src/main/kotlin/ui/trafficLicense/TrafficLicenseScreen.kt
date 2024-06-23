@@ -34,12 +34,12 @@ import repository.PdfRepository
 import theme.*
 import ui.dialog.CustomAlertDialog
 import ui.main.FileRow
-import ui.main.MainContract
 import ui.trafficLicense.TrafficLicenseContract.State
 import ui.trafficLicense.TrafficLicenseContract.Event
 import ui.trafficLicense.TrafficLicenseContract.Event.*
 import ui.trafficLicense.TrafficLicenseContract.*
 import useCase.AnalyzePdfTrafficLicenseUseCase
+import useCase.RenamePdfUseCase
 import viewModel.trafficLicense.TrafficLicenseViewModel
 import java.awt.Cursor
 
@@ -49,7 +49,8 @@ fun TrafficLicenseScreen() {
     val viewModel = remember {
         TrafficLicenseViewModel(
             coroutineScope = coroutineScope,
-            analyzePdfTrafficLicenseUseCase = AnalyzePdfTrafficLicenseUseCase(pdfRepository = PdfRepository())
+            analyzePdfTrafficLicenseUseCase = AnalyzePdfTrafficLicenseUseCase(pdfRepository = PdfRepository()),
+            renamePdfUseCase = RenamePdfUseCase(pdfRepository = PdfRepository())
         )
     }
 
@@ -173,25 +174,24 @@ private fun TrafficFeesContent(
                 Spacer(modifier = Modifier.width(10.dp))
                 Text(
                     modifier = Modifier.clickable {
-//                        onEvent(MainContract.Event.SelectExcelFile)
+                        onEvent(SelectExcelFile)
                     }
                         .pointerHoverIcon(PointerIcon(Cursor(Cursor.HAND_CURSOR))),
-//                    text = if (state.excelSelectedFile == null) "Select Excel file" else state.excelSelectedFile.name,
-//                    color = if (state.excelSelectedFile != null) excelGreen else Color.Blue,
+                    text = if (state.excelSelectedFile == null) "Select Excel file" else state.excelSelectedFile.name,
+                    color = if (state.excelSelectedFile != null) excelGreen else Color.Blue,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    text = "test"
+                    overflow = TextOverflow.Ellipsis
                 )
-//                if (state.excelSelectedFile != null) {
-//                    Spacer(modifier = Modifier.width(10.dp))
-//                    Image(
-//                        modifier = Modifier.size(12.dp)
-//                            .clickable { onEvent(MainContract.Event.ClearSelectedExcelFile) }
-//                            .pointerHoverIcon(PointerIcon(Cursor(Cursor.HAND_CURSOR))),
-//                        painter = painterResource("assets/ic_close.png"),
-//                        contentDescription = "",
-//                        colorFilter = ColorFilter.tint(Color.Gray))
-//                }
+                if (state.excelSelectedFile != null) {
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Image(
+                        modifier = Modifier.size(12.dp)
+                            .clickable { onEvent(ClearSelectedExcelFile) }
+                            .pointerHoverIcon(PointerIcon(Cursor(Cursor.HAND_CURSOR))),
+                        painter = painterResource("assets/ic_close.png"),
+                        contentDescription = "",
+                        colorFilter = ColorFilter.tint(Color.Gray))
+                }
             }
 
             OutlinedButton(
@@ -217,8 +217,7 @@ private fun TrafficFeesContent(
 
             OutlinedButton(
                 modifier = Modifier.pointerHoverIcon(PointerIcon(Cursor(Cursor.HAND_CURSOR))),
-//                enabled = state.filesList.isNotEmpty() && state.excelSelectedFile != null,
-                enabled = state.filesList.isNotEmpty() ,
+                enabled = state.filesList.isNotEmpty() && state.excelSelectedFile != null,
                 shape = RoundedCornerShape(6.dp),
                 colors = ButtonDefaults.buttonColors(
                     backgroundColor = activeGreen,

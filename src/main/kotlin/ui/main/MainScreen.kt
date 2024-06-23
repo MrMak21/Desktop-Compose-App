@@ -1,4 +1,4 @@
-package ui
+package ui.main
 
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.layout.Box
@@ -11,8 +11,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import extensions.startCollecting
 import repository.PdfRepository
-import ui.main.KteoScreenContent
-import ui.main.MainContract
 import ui.main.MainContract.Event.SideMenuItemSelected
 import ui.sidePanel.SidePanel
 import ui.sidePanel.SidePanelItem

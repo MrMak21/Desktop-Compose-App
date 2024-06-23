@@ -5,22 +5,22 @@ import data.main.PdfListFile
 import extensions.onError
 import extensions.onSuccess
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import operations.FileChooser
 import operations.excel.ExcelHandler
 import org.apache.poi.ss.usermodel.WorkbookFactory
-import ui.main.MainContract
+import ui.main.MainContract.Event
+import ui.main.MainContract.Event.*
+import ui.main.MainContract.State
 import ui.sidePanel.SidePanelItem
 import useCase.AnalyzePdfKteoUseCase
 import useCase.AnalyzePdfVehicleIdUseCase
-import ui.main.MainContract.*
-import ui.main.MainContract.Event.*
 import useCase.RenamePdfUseCase
 import viewModel.core.CoreViewModel
 import java.awt.Desktop
 import java.io.File
-import kotlin.time.Duration
 
 class MainViewModel(
     private val coroutineScope: CoroutineScope,
@@ -77,10 +77,6 @@ class MainViewModel(
         }
     }
 
-    private fun openFileExplorer(file: File) {
-        Desktop.getDesktop().open(file.parentFile)
-    }
-
     private fun selectFiles() {
         val fileChooser = FileChooser()
         val selectedFiles = fileChooser.selectMutliplePDF()
@@ -112,7 +108,7 @@ class MainViewModel(
     }
 
     private fun validateExcelFile(excelFile: File) {
-        val workbook = WorkbookFactory.create(excelFile) ?: return
+        WorkbookFactory.create(excelFile) ?: return
         setState {
             copy(
                 excelSelectedFile = excelFile
@@ -126,7 +122,7 @@ class MainViewModel(
 
         val excelHandler = currentState.excelSelectedFile?.let { ExcelHandler.initExcelHandler(it) } ?: return
 
-        coroutineScope.launch {
+        coroutineScope.launch(Dispatchers.Default) {
             selectedFiles.forEach { selectedFile ->
                 renameAndWriteToExcelTrafficFeesFile(selectedFile, excelHandler)
             }
@@ -144,7 +140,7 @@ class MainViewModel(
             return
         }
 
-        val renamedFile = renamePdfUseCase.invoke(workingFile.file, vehicleId)
+        renamePdfUseCase.invoke(workingFile.file, vehicleId)
             .onSuccess { renamedFile ->
                 onFileRenameSuccess(workingFile, renamedFile)
             }
@@ -165,7 +161,7 @@ class MainViewModel(
         if (selectedFiles.isEmpty())
             return
 
-        coroutineScope.launch {
+        coroutineScope.launch((Dispatchers.Default)) {
             selectedFiles.forEach { selectedFile ->
                 setStateToFile(selectedFile, PdfFileStatus.LOADING)
                 delay(1)
@@ -201,7 +197,7 @@ class MainViewModel(
 
         val excelHandler = currentState.excelSelectedFile?.let { ExcelHandler.initExcelHandler(it) } ?: return
 
-        coroutineScope.launch {
+        coroutineScope.launch((Dispatchers.Default)) {
             selectedFiles.forEach { selectedFile ->
                 val kteoExtractedDate = pdfKteoUseCase.invoke(selectedFile.file)
                 if (kteoExtractedDate != null) {
@@ -213,7 +209,7 @@ class MainViewModel(
         }
     }
 
-    private fun setStateToFile(file: PdfListFile, newFileStatus: PdfFileStatus) {
+    override fun setStateToFile(file: PdfListFile, newFileStatus: PdfFileStatus) {
         currentState.filesList.find {it == file}?.changeStatus(newStatus = newFileStatus)
         setState {
             copy(

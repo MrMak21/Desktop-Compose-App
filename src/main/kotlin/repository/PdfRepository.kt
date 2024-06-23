@@ -3,12 +3,14 @@ package repository
 import contracts.PdfRepositoryContract
 import extensions.translateToGreek
 import helpers.Constants
+import net.sourceforge.tess4j.ITesseract
 import net.sourceforge.tess4j.Tesseract
 import org.apache.pdfbox.Loader
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.rendering.ImageType
 import org.apache.pdfbox.rendering.PDFRenderer
 import org.apache.pdfbox.text.PDFTextStripper
+import java.awt.image.BufferedImage
 import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -35,44 +37,18 @@ class PdfRepository: PdfRepositoryContract {
         pdfDocument?.let {
             var pdfText = pdfStripper.getText(it)
             if (pdfText.trim().isEmpty()) {
-                pdfText = extractTextFromImage(it)
+                pdfText = extractTextFromPdf(it)
             }
             return extractKteoDate(pdfText)
         }
         return null
     }
 
-    private fun extractTextFromImage(pdDocument: PDDocument): String {
-
-        val pdfRenderer = PDFRenderer(pdDocument)
-        val out = java.lang.StringBuilder()
-
-        val _tesseract = Tesseract()
-        val dataDirectory: Path = Paths.get("src/main/resources/tessdata/")
-        _tesseract.setDatapath(dataDirectory.toString())
-        _tesseract.setLanguage("grc")
-//        _tesseract.setTessVariable("tessedit_char_whitelist", "0123456789abcdefghijklmnopqrstuvwxyz")
-
-        for (page in 0 until pdDocument.numberOfPages) {
-            val bim = pdfRenderer.renderImageWithDPI(page, 300f, ImageType.RGB)
-
-            // Create a temp image file
-            val temp = File.createTempFile("tempfile_$page", ".png")
-            ImageIO.write(bim, "png", temp)
-            val result = _tesseract.doOCR(temp)
-            out.append(result)
-
-            // Delete temp file
-            temp.delete()
-        }
-        return out.toString()
-    }
-
-    override fun getVehicleIdFromImagePdf(pdfFile: File) {
+    override fun getVehicleIdFromImagePdf(pdfFile: File): String? {
         val pdfDocument = Loader.loadPDF(pdfFile)
-        pdfDocument?.let {
-            val text = extractTextFromImage(it)
-            println(text)
+        return pdfDocument?.let {
+            val pdfText = extractTextFromPdf(it)
+            extractTrafficLicensePlate(pdfText)
         }
     }
 
@@ -84,8 +60,51 @@ class PdfRepository: PdfRepositoryContract {
         return null
     }
 
+
+    private fun extractTextFromPdf(pdDocument: PDDocument): String {
+
+        val pdfRenderer = PDFRenderer(pdDocument)
+        val out = java.lang.StringBuilder()
+
+        val tesseractOcr: ITesseract = Tesseract()
+        val dataDirectory: Path = Paths.get("src/main/resources/tessdata/")
+        tesseractOcr.setDatapath(dataDirectory.toString())
+        tesseractOcr.setLanguage("ell")
+        tesseractOcr.setOcrEngineMode(2)
+        tesseractOcr.setPageSegMode(1)
+//        tesseractOcr.setTessVariable("tessedit_char_whitelist", "0123456789ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζθηικλμνξοπρστυφχψω ")  // Only greek letters and numbers
+
+        for (page in 0 until pdDocument.numberOfPages) {
+
+            val bim = pdfRenderer.renderImageWithDPI(page, 300f, ImageType.RGB)
+            val preprocessedImage = preprocessImage(bim)
+            val temp = File.createTempFile("tempfile_$page", ".png")
+
+            try {
+                ImageIO.write(preprocessedImage, "png", temp)
+                val result = tesseractOcr.doOCR(temp)
+                out.append(result)
+                temp.delete()
+            } catch (t: Throwable) {
+                temp.delete()
+            }
+        }
+        return out.toString()
+    }
+
+    private fun preprocessImage(image: BufferedImage): BufferedImage {
+        // Convert to grayscale
+        val grayscaleImage = BufferedImage(image.width, image.height, BufferedImage.TYPE_BYTE_GRAY)
+        val g = grayscaleImage.createGraphics()
+        g.drawImage(image, 0, 0, null)
+        g.dispose()
+
+        // Additional preprocessing steps can be added here (e.g., noise reduction, deskewing)
+        return grayscaleImage
+    }
+
     private fun extractNumber(document: String): String? {
-        val greekRegex = Constants.Vehicle.GREEK_LICENSE_FULL_REGEX.toRegex()  // VEHICLE_ID_GREEK_PATTERN.toRegex()
+        val greekRegex = Constants.Vehicle.GREEK_LICENSE_FULL_REGEX.toRegex()
         val greekMatch = greekRegex.find(document)
         val greekResult = greekMatch?.value
 
@@ -97,43 +116,24 @@ class PdfRepository: PdfRepositoryContract {
     }
 
     private fun extractEnglishNumber(document: String): String? {
-        val englishRegex = Constants.Vehicle.LICENSE_FULL_REGEX.toRegex()  // VEHICLE_ID_PATTERN.toRegex()
+        val englishRegex = Constants.Vehicle.LICENSE_FULL_REGEX.toRegex()
         val englishMatch = englishRegex.find(document)
         val englishResult = englishMatch?.value
 
         if (englishResult != null) {
             println("Found english: $englishResult")
-            val convertedGreekString = englishResult.translateToGreek() // translateToGreek(englishResult)
+            val convertedGreekString = englishResult.translateToGreek()
             println("Translated in Greek: $convertedGreekString")
             return convertedGreekString
         }
         return englishResult
     }
 
-    private fun translateToGreek(input: String): String {
-        val englishToGreek = mapOf(
-            'a' to 'α', 'A' to 'Α',
-            'b' to 'β', 'B' to 'Β',
-            'e' to 'ε', 'E' to 'Ε',
-            'h' to 'η', 'H' to 'Η',
-            'i' to 'ι', 'I' to 'Ι',
-            'k' to 'κ', 'K' to 'Κ',
-            'm' to 'μ', 'M' to 'Μ',
-            'n' to 'ν', 'N' to 'Ν',
-            'o' to 'ο', 'O' to 'Ο',
-            'p' to 'π', 'P' to 'Ρ',
-            'r' to 'ρ', 'R' to 'Ρ',
-            's' to 'σ', 'S' to 'Σ',
-            't' to 'τ', 'T' to 'Τ',
-            'u' to 'υ', 'U' to 'Υ',
-            'x' to 'χ', 'X' to 'Χ',
-            'y' to 'γ', 'Y' to 'Υ',
-            'z' to 'ζ', 'Z' to 'Ζ'
-        )
+    private fun extractTrafficLicensePlate(document: String): String? {
+        val greekRegex = Constants.Vehicle.GREEK_LICENSE_FULL_REGEX_ALTERNATIVE.toRegex()
+        val greekMatch = greekRegex.find(document)
 
-        return input.map { char ->
-            englishToGreek[char] ?: char
-        }.joinToString("")
+        return greekMatch?.value
     }
 
     private fun extractKteoDate(document: String): String? {

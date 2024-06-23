@@ -29,7 +29,7 @@ interface MainContract {
         val filesList: List<PdfListFile> = emptyList(),
         val excelSelectedFile: File? = null,
         val sidePanelItem: SidePanelItem = SidePanelItem.TRAFFIC_FEES,
-        val testStateInt: Int = 0
+        override val testStateInt: Int = 0
     ): UiState
 
     sealed class MainScreenState {

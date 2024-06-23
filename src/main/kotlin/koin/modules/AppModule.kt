@@ -34,6 +34,6 @@ val appModule = module {
     }
 
     single {
-        TrafficLicenseViewModel(get(), get())
+        TrafficLicenseViewModel(get(), get(), get())
     }
 }

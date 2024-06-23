@@ -1,11 +1,15 @@
 package viewModel.core
 
+import data.main.PdfFileStatus
+import data.main.PdfListFile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import ui.common.UiEvent
 import ui.common.UiState
+import java.awt.Desktop
+import java.io.File
 
 abstract class CoreViewModel<E: UiEvent, S: UiState>(
     private val initialState: S,
@@ -30,4 +34,11 @@ abstract class CoreViewModel<E: UiEvent, S: UiState>(
     }
 
     protected abstract suspend fun handleEvent(event: E)
+
+    protected abstract fun setStateToFile(file: PdfListFile, newFileStatus: PdfFileStatus)
+
+    protected fun openFileExplorer(file: File) {
+        Desktop.getDesktop().open(file.parentFile)
+    }
+
 }

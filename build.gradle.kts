@@ -34,7 +34,7 @@ dependencies {
     implementation("org.apache.logging.log4j:log4j-core:2.22.1")
 
     // https://mvnrepository.com/artifact/net.sourceforge.tess4j/tess4j
-    implementation("net.sourceforge.tess4j:tess4j:5.8.0")
+    implementation("net.sourceforge.tess4j:tess4j:5.11.0")
 
 //    testImplementation ("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.2")
     implementation(kotlin("stdlib-jdk8"))
