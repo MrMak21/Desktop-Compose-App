@@ -33,7 +33,7 @@ fun SidePanel(
         ) {
             SidePanelItem(TRAFFIC_FEES, "assets/ic_car_plate.png", onMenuSelected)
             SidePanelItem(KTEO, "assets/ic_kteo.png", onMenuSelected, enabled = false)
-//            SidePanelItem(INVOICE, "", onMenuSelected)
+            SidePanelItem(TRAFFIC_LICENSE, "assets/ic_kteo.png", onMenuSelected)
 
         }
         Divider(modifier = Modifier.fillMaxHeight().width(1.dp).background(backgroundGraySecondary))
@@ -84,8 +84,8 @@ private fun getItemTitle(type: SidePanelItem): String {
         TRAFFIC_FEES -> {
             "B.TK"
         }
-        INVOICE -> {
-            "Invoice"
+        TRAFFIC_LICENSE -> {
+            "ΑΔΕΙΕΣ"
         }
     }
 }
@@ -93,5 +93,5 @@ private fun getItemTitle(type: SidePanelItem): String {
 enum class SidePanelItem {
     KTEO,
     TRAFFIC_FEES,
-    INVOICE
+    TRAFFIC_LICENSE
 }

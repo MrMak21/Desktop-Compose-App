@@ -43,7 +43,7 @@ fun TrafficFeesScreen(
     onEvent: (MainContract.Event) -> Unit
 ) {
 
-    var showInfoDialog = remember { mutableStateOf(false) }
+    val showInfoDialog = remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier.fillMaxSize().background(backgroundWhite),

@@ -68,6 +68,14 @@ class PdfRepository: PdfRepositoryContract {
         return out.toString()
     }
 
+    override fun getVehicleIdFromImagePdf(pdfFile: File) {
+        val pdfDocument = Loader.loadPDF(pdfFile)
+        pdfDocument?.let {
+            val text = extractTextFromImage(it)
+            println(text)
+        }
+    }
+
     override fun renameFile(pdfFile: File, newName: String): File? {
         val newFile = File(pdfFile.parent, "$newName.pdf")
         if (pdfFile.renameTo(newFile)) {
