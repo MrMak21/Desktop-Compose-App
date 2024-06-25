@@ -25,6 +25,9 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.2")
 
     implementation("io.insert-koin:koin-core:3.5.2")
+    // https://mvnrepository.com/artifact/io.insert-koin/koin-compose
+    runtimeOnly("io.insert-koin:koin-compose:3.6.0-wasm-alpha2")
+
 
     // https://mvnrepository.com/artifact/org.apache.poi/poi
     implementation("org.apache.poi:poi:5.2.5")

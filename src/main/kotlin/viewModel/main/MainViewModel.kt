@@ -149,7 +149,7 @@ class MainViewModel(
                 return@onError
             } ?: return
 
-        val writtenToExcel = excelHandler.writeTelhKykloforiasToExcel(vehicleId)
+        val writtenToExcel = excelHandler.writeVehicleIdToExcel(vehicleId, SidePanelItem.TRAFFIC_FEES)
         setStateToFile(
             file = workingFile,
             newFileStatus = if (writtenToExcel) PdfFileStatus.SUCCESS else PdfFileStatus.FAILED

@@ -11,6 +11,7 @@ import operations.FileChooser
 import operations.excel.ExcelHandler
 import org.apache.poi.ss.usermodel.WorkbookFactory
 import ui.main.MainContract
+import ui.sidePanel.SidePanelItem
 import ui.trafficLicense.TrafficLicenseContract.*
 import ui.trafficLicense.TrafficLicenseContract.Event
 import ui.trafficLicense.TrafficLicenseContract.Event.*
@@ -43,6 +44,12 @@ class TrafficLicenseViewModel(
             is ClearSelectedExcelFile -> {
                 clearSelectedExcelFile()
             }
+            is ClearSelectedPdfFiles -> {
+                clearSelectedPdfFiles()
+            }
+            is OpenFileExplorer -> {
+                openFileExplorer(event.file.file)
+            }
         }
     }
 
@@ -54,12 +61,12 @@ class TrafficLicenseViewModel(
 
         coroutineScope.launch(Dispatchers.IO) {
             listFiles.forEach {
-                renameAndWriteToExcelTrafficFeesFile(workingFile = it, excelHandler = excelHandler)
+                renameAndWriteToExcelTrafficLicenseFile(workingFile = it, excelHandler = excelHandler)
             }
         }
     }
 
-    private suspend fun renameAndWriteToExcelTrafficFeesFile(workingFile: PdfListFile, excelHandler: ExcelHandler) {
+    private suspend fun renameAndWriteToExcelTrafficLicenseFile(workingFile: PdfListFile, excelHandler: ExcelHandler) {
         setStateToFile(workingFile, PdfFileStatus.LOADING)
 
         val vehicleId = analyzePdfTrafficLicenseUseCase.invoke(workingFile.file)
@@ -79,7 +86,8 @@ class TrafficLicenseViewModel(
                 return@onError
             } ?: return
 
-        val writtenToExcel = excelHandler.writeTelhKykloforiasToExcel(vehicleId)
+        val writtenToExcel = excelHandler.writeVehicleIdToExcel(vehicleId, SidePanelItem.TRAFFIC_LICENSE)
+
         setStateToFile(
             file = workingFile,
             newFileStatus = if (writtenToExcel) PdfFileStatus.SUCCESS else PdfFileStatus.FAILED
@@ -96,6 +104,10 @@ class TrafficLicenseViewModel(
         }
     }
 
+
+    private fun clearSelectedPdfFiles() {
+        setState { copy(filesList = emptyList()) }
+    }
 
     private fun clearSelectedExcelFile() {
         setState { copy(excelSelectedFile = null) }

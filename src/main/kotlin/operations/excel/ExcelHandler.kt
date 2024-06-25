@@ -2,8 +2,11 @@ package operations.excel
 
 
 import extensions.*
+import helpers.Constants
+import org.apache.commons.math3.geometry.partitioning.Side
 import org.apache.poi.ss.usermodel.*
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
+import ui.sidePanel.SidePanelItem
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -12,14 +15,13 @@ class ExcelHandler(private val workbook: Workbook, private val excelFile: File) 
 
     companion object {
         fun initExcelHandler(excelFile: File): ExcelHandler? {
-//            val workbook = WorkbookFactory.create(excelFile) ?: return null
             val workbook = XSSFWorkbook(FileInputStream(excelFile)) ?: return null
             return ExcelHandler(workbook, excelFile)
         }
     }
 
-    private val TELH_KYKLOFORIAS_LABEL = "Β.ΤΚ"
-    private var TELH_KYKLOFORIAS_COLUMN_INDEX = -1
+    private var TRAFFIC_FEES_COLUMN_INDEX = -1
+    private var TRAFFIC_LICENSE_COLUMN_INDEX = -1
 
     private var VEHICLE_LICENSE_PLATE_COLUMN_INDEX = -1
     private var VEHICLE_LICENSE_NUMBERS_COLUMN_INDEX = -1
@@ -29,17 +31,29 @@ class ExcelHandler(private val workbook: Workbook, private val excelFile: File) 
     init {
         activeSheet = workbook.getSheetAt(0)
         activeSheet?.let { activesheet ->
-            findTelhKykloforiasCell(activesheet)
+            findTrafficFeesExcelHeaderCell(activesheet)
+            findTrafficLicenseExcelHeaderCell(activesheet)
             findVehiclePlateColumnIndex(activesheet)
         }
     }
 
-    private fun findTelhKykloforiasCell(sheet: Sheet) {
+    private fun findTrafficLicenseExcelHeaderCell(sheet: Sheet) {
         val firstRow = sheet.getRow(0) ?: return
         for (cell in firstRow) {
             cell?.let { currentCell ->
-                if (currentCell.cellType == CellType.STRING && currentCell.stringCellValue == TELH_KYKLOFORIAS_LABEL) {
-                    TELH_KYKLOFORIAS_COLUMN_INDEX = currentCell.columnIndex
+                if (currentCell.hasStringValue(Constants.ExcelColumnHeaders.TRAFFIC_LICENSE_HEADER_LABEL)) {
+                    TRAFFIC_LICENSE_COLUMN_INDEX = currentCell.columnIndex
+                }
+            }
+        }
+    }
+
+    private fun findTrafficFeesExcelHeaderCell(sheet: Sheet) {
+        val firstRow = sheet.getRow(0) ?: return
+        for (cell in firstRow) {
+            cell?.let { currentCell ->
+                if (currentCell.hasStringValue(Constants.ExcelColumnHeaders.TRAFFIC_FEES_LABEL)) {
+                    TRAFFIC_FEES_COLUMN_INDEX = currentCell.columnIndex
                 }
             }
         }
@@ -63,9 +77,17 @@ class ExcelHandler(private val workbook: Workbook, private val excelFile: File) 
         }
     }
 
-    fun writeTelhKykloforiasToExcel(vehicleId: String): Boolean {
-        val vehicleIdLettersGR = vehicleId.substring(0,3)
-        val vehicleIdNumbersGR = vehicleId.substring(3,7)
+    fun writeVehicleIdToExcel(vehicleId: String, type: SidePanelItem): Boolean {
+        return when (type) {
+            SidePanelItem.TRAFFIC_FEES -> { writeVehicleToExcel(vehicleId, type) }
+            SidePanelItem.TRAFFIC_LICENSE -> { writeVehicleToExcel(vehicleId, type) }
+            SidePanelItem.KTEO -> { return false }
+        }
+    }
+
+    private fun writeVehicleToExcel(vehicleId: String, type: SidePanelItem): Boolean {
+        val vehicleIdLettersGR = vehicleId.replace(" ", "").substring(0,3).trim()
+        val vehicleIdNumbersGR = vehicleId.replace(" ", "").substring(3,7).trim()
 
         val vehicleIdLettersRow = findVehicleIdLettersCell(vehicleIdLettersGR)?.row?.rowNum ?: return false
         val vehicleIdNumbersRow = findVehicleIdNumbersCell(vehicleIdNumbersGR)?.row?.rowNum ?: return false
@@ -73,12 +95,19 @@ class ExcelHandler(private val workbook: Workbook, private val excelFile: File) 
 
         return if (vehicleIdLettersRow != vehicleIdNumbersRow) {
             val finalFoundRow = findRowContainBothValues(vehicleIdLettersRow, vehicleIdNumbersRow, vehicleIdLettersGR, vehicleIdNumbersGR)
-            writeInExcel(finalFoundRow, TELH_KYKLOFORIAS_COLUMN_INDEX)
+            writeInExcel(finalFoundRow, getColumnIndexFromType(type))
         } else {
-            writeInExcel(vehicleIdLettersRow, TELH_KYKLOFORIAS_COLUMN_INDEX)
+            writeInExcel(vehicleIdLettersRow, getColumnIndexFromType(type))
+        }
+    }
+
+    private fun getColumnIndexFromType(type: SidePanelItem): Int =
+        when (type) {
+            SidePanelItem.TRAFFIC_FEES -> { TRAFFIC_FEES_COLUMN_INDEX }
+            SidePanelItem.TRAFFIC_LICENSE -> { TRAFFIC_LICENSE_COLUMN_INDEX }
+            else -> { -1 }
         }
 
-    }
 
     private fun writeInExcel(row: Int, column: Int): Boolean {
         return try {

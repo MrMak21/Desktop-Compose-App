@@ -81,7 +81,7 @@ class PdfRepository: PdfRepositoryContract {
             val temp = File.createTempFile("tempfile_$page", ".png")
 
             try {
-                ImageIO.write(preprocessedImage, "png", temp)
+                ImageIO.write(bim, "png", temp)
                 val result = tesseractOcr.doOCR(temp)
                 out.append(result)
                 temp.delete()

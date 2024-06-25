@@ -7,6 +7,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
+import koin.modules.appModule
+import org.koin.core.component.KoinComponent
+import org.koin.core.context.startKoin
 import ui.main.MainScreen
 
 @Composable
@@ -17,7 +20,12 @@ fun App() {
     }
 }
 
+
 fun main() = application {
+    startKoin {
+        modules(appModule)
+    }
+
     Window(
         state = rememberWindowState(width = 1000.dp, height = 700.dp), // Set fixed size here
         resizable = false,
@@ -27,3 +35,5 @@ fun main() = application {
         App()
     }
 }
+
+

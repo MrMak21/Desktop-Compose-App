@@ -137,7 +137,7 @@ private fun TrafficFeesContent(
                     Spacer(modifier = Modifier.width(10.dp))
                     Image(
                         modifier = Modifier.size(12.dp)
-//                            .clickable { onEvent(ClearSelectedPdfFiles) }
+                            .clickable { onEvent(ClearSelectedPdfFiles) }
                             .pointerHoverIcon(PointerIcon(Cursor(Cursor.HAND_CURSOR))), painter = painterResource("assets/ic_close.png"), contentDescription = "",
                         colorFilter = ColorFilter.tint(Color.Gray)
                     )
@@ -153,7 +153,7 @@ private fun TrafficFeesContent(
                     )) {
                     itemsIndexed(state.filesList) { index, item ->
                         FileRow(file = item) { clickedFile: PdfListFile ->
-//                            onEvent(MainContract.Event.OpenFileExplorer(clickedFile))
+                            onEvent(OpenFileExplorer(clickedFile))
                         }
                     }
                 }

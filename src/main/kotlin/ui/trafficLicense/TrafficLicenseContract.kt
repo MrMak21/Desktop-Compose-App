@@ -11,7 +11,9 @@ interface TrafficLicenseContract {
         object SelectFiles: Event()
         object SelectExcelFile: Event()
         object ClearSelectedExcelFile: Event()
+        object ClearSelectedPdfFiles: Event()
         data class AnalyzeTrafficLicenses(val listFiles: List<PdfListFile>): Event()
+        data class OpenFileExplorer(val file: PdfListFile): Event()
     }
 
     data class State(
