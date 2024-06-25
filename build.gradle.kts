@@ -57,15 +57,15 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             includeAllModules = true
             packageName = "Kyklos SA"
-            packageVersion = "1.0.1"
+            packageVersion = "1.0.2"
             description = "Kyklos CRM Desktop Application"
             copyright = "© 2024 Panagiotis Makris. All rights reserved."
             vendor = "Makris"
             windows {
                 iconFile.set(project.file("src/main/resources/assets/ic_logo.ico"))
-                packageVersion = "1.0.1"
-                msiPackageVersion = "1.0.1"
-                exePackageVersion = "1.0.1"
+                packageVersion = "1.0.2"
+                msiPackageVersion = "1.0.2"
+                exePackageVersion = "1.0.2"
                 menu = true
                 shortcut = true
             }
